@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1216">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Chat Técnico · Bethel</title>
+<style>
+  :root{
+    --fondo:#0d1216;
+    --panel:#141c22;
+    --panel-alto:#1b262e;
+    --linea:#25333d;
+    --texto:#dfe8ee;
+    --tenue:#7d919f;
+    --ambar:#f0a84a;
+    --cian:#3fd0e0;
+    --propio:#1f3a3f;
+    --alerta:#e06b5c;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--fondo);color:var(--texto);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    font-size:15px;line-height:1.45;
+    display:flex;flex-direction:column;
+    overflow:hidden;
+  }
+  button{font-family:inherit;font-size:inherit;cursor:pointer}
+  input,textarea{font-family:inherit;font-size:16px}
+
+  /* ---------- Ingreso ---------- */
+  #ingreso{
+    flex:1;display:flex;flex-direction:column;justify-content:center;
+    padding:28px 22px;gap:18px;max-width:420px;margin:0 auto;width:100%;
+  }
+  .marca{display:flex;align-items:baseline;gap:9px;margin-bottom:6px}
+  .marca b{font-size:26px;font-weight:600;letter-spacing:-.4px}
+  .marca span{font-size:13px;color:var(--ambar)}
+  .lead{color:var(--tenue);font-size:14px;margin:0 0 10px}
+  .campo{display:block;margin-bottom:14px}
+  .campo em{
+    display:block;font-style:normal;font-size:12.5px;
+    color:var(--tenue);margin-bottom:6px;
+  }
+  .campo input{
+    width:100%;padding:13px 14px;border-radius:10px;
+    background:var(--panel);border:1px solid var(--linea);
+    color:var(--texto);outline:none;
+  }
+  .campo input:focus{border-color:var(--cian)}
+  #entrar{
+    width:100%;padding:14px;border:0;border-radius:10px;
+    background:var(--ambar);color:#10171c;font-weight:600;
+  }
+  #entrar:disabled{opacity:.45}
+  .nota{font-size:12px;color:var(--tenue);line-height:1.55;margin-top:4px}
+  .nota strong{color:var(--alerta);font-weight:600}
+
+  /* ---------- Chat ---------- */
+  #chat{flex:1;display:none;flex-direction:column;min-height:0}
+  header{
+    display:flex;align-items:center;gap:11px;
+    padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+    background:var(--panel);border-bottom:1px solid var(--linea);
+  }
+  #salir{
+    background:none;border:0;color:var(--tenue);
+    font-size:22px;line-height:1;padding:2px 4px;
+  }
+  .titulo{flex:1;min-width:0}
+  .titulo b{display:block;font-size:16px;font-weight:600}
+  .titulo small{display:block;font-size:12px;color:var(--tenue)}
+  #foco{
+    width:9px;height:9px;border-radius:50%;
+    background:var(--alerta);flex:none;transition:background .3s;
+  }
+  #foco.ok{background:var(--cian)}
+
+  #hilo{
+    flex:1;overflow-y:auto;padding:14px 12px 6px;
+    display:flex;flex-direction:column;gap:8px;
+    overscroll-behavior:contain;
+  }
+  .vacio{margin:auto;text-align:center;color:var(--tenue);font-size:13.5px;max-width:250px}
+
+  .burbuja{
+    max-width:82%;padding:8px 11px 6px;border-radius:12px;
+    background:var(--panel-alto);align-self:flex-start;
+    word-wrap:break-word;overflow-wrap:anywhere;
+  }
+  .burbuja.mia{background:var(--propio);align-self:flex-end}
+  .autor{
+    display:block;font-size:12px;font-weight:600;
+    color:var(--ambar);margin-bottom:2px;
+  }
+  .hora{
+    display:block;text-align:right;font-size:10.5px;
+    color:var(--tenue);margin-top:2px;
+  }
+  .aviso{
+    align-self:center;font-size:12px;color:var(--tenue);
+    background:var(--panel);padding:4px 11px;border-radius:20px;
+  }
+
+  #barra{
+    display:flex;align-items:flex-end;gap:8px;
+    padding:9px 10px calc(9px + env(safe-area-inset-bottom));
+    background:var(--panel);border-top:1px solid var(--linea);
+  }
+  #texto{
+    flex:1;resize:none;max-height:110px;
+    padding:10px 13px;border-radius:20px;
+    background:var(--fondo);border:1px solid var(--linea);
+    color:var(--texto);outline:none;
+  }
+  #texto:focus{border-color:var(--cian)}
+  #enviar{
+    flex:none;width:44px;height:44px;border:0;border-radius:50%;
+    background:var(--ambar);color:#10171c;font-size:19px;
+  }
+  #enviar:disabled{opacity:.4}
+</style>
+</head>
+<body>
+
+<section id="ingreso">
+  <div class="marca"><b>Chat Técnico</b><span>Bethel</span></div>
+  <p class="lead">Escribe tu nombre y el código del grupo que te dieron en la central.</p>
+
+  <label class="campo">
+    <em>Tu nombre</em>
+    <input id="nombre" autocomplete="off" placeholder="Manuel Alvarado">
+  </label>
+
+  <label class="campo">
+    <em>Código del grupo</em>
+    <input id="grupo" autocomplete="off" autocapitalize="characters" placeholder="TECNICA">
+  </label>
+
+  <button id="entrar" disabled>Entrar al grupo</button>
+
+  <p class="nota">
+    Prototipo de prueba sobre un servidor MQTT público.
+    <strong>No envíes información reservada</strong> mientras no esté el servidor propio.
+    Los mensajes no se guardan: solo los ve quien está conectado en ese momento.
+  </p>
+</section>
+
+<section id="chat">
+  <header>
+    <button id="salir" aria-label="Salir del grupo">&#8592;</button>
+    <div class="titulo"><b id="tGrupo"></b><small id="tEstado">Conectando…</small></div>
+    <div id="foco"></div>
+  </header>
+  <div id="hilo"></div>
+  <div id="barra">
+    <textarea id="texto" rows="1" placeholder="Mensaje" enterkeyhint="send"></textarea>
+    <button id="enviar" aria-label="Enviar mensaje" disabled>&#10148;</button>
+  </div>
+</section>
+
+<script src="https://unpkg.com/mqtt@5.7.0/dist/mqtt.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var SERVIDOR = "wss://broker.emqx.io:8084/mqtt";
+  var RAIZ = "bethel/chat/v1/";
+
+  var $ = function(id){ return document.getElementById(id); };
+  var elIngreso = $("ingreso"), elChat = $("chat"), elHilo = $("hilo");
+  var inNombre = $("nombre"), inGrupo = $("grupo"), btEntrar = $("entrar");
+  var inTexto = $("texto"), btEnviar = $("enviar"), btSalir = $("salir");
+  var elFoco = $("foco"), elTGrupo = $("tGrupo"), elTEstado = $("tEstado");
+
+  var cliente = null, yo = "", grupo = "", idCliente = "";
+  var presentes = {};
+
+  // Recordar nombre y grupo sin romperse si el navegador bloquea el almacenamiento
+  var guardado = {};
+  function leer(k){ try{ return localStorage.getItem(k); }catch(e){ return guardado[k] || null; } }
+  function grabar(k,v){ try{ localStorage.setItem(k,v); }catch(e){ guardado[k]=v; } }
+
+  function limpiarCodigo(s){
+    return s.trim().toUpperCase().replace(/[^A-Z0-9\-]/g,"-").replace(/-+/g,"-").replace(/^-|-$/g,"");
+  }
+  function hora(ts){
+    var d = new Date(ts);
+    return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);
+  }
+  function alFinal(){ elHilo.scrollTop = elHilo.scrollHeight; }
+
+  function vaciarPlaceholder(){
+    var v = elHilo.querySelector(".vacio");
+    if(v) v.remove();
+  }
+
+  function pintarMensaje(autor, cuerpo, ts, mio){
+    vaciarPlaceholder();
+    var b = document.createElement("div");
+    b.className = "burbuja" + (mio ? " mia" : "");
+    if(!mio){
+      var a = document.createElement("span");
+      a.className = "autor"; a.textContent = autor;
+      b.appendChild(a);
+    }
+    var t = document.createElement("div");
+    t.textContent = cuerpo;
+    b.appendChild(t);
+    var h = document.createElement("span");
+    h.className = "hora"; h.textContent = hora(ts);
+    b.appendChild(h);
+    elHilo.appendChild(b);
+    alFinal();
+  }
+
+  function pintarAviso(txt){
+    vaciarPlaceholder();
+    var a = document.createElement("div");
+    a.className = "aviso"; a.textContent = txt;
+    elHilo.appendChild(a);
+    alFinal();
+  }
+
+  function contarPresentes(){
+    var n = 0, k;
+    for(k in presentes){ if(Object.prototype.hasOwnProperty.call(presentes,k)) n++; }
+    elTEstado.textContent = n === 1 ? "1 conectado" : n + " conectados";
+  }
+
+  function conectar(){
+    var tMsg = RAIZ + grupo + "/msg";
+    var tYo  = RAIZ + grupo + "/quien/" + idCliente;
+
+    cliente = mqtt.connect(SERVIDOR, {
+      clientId: idCliente,
+      clean: true,
+      reconnectPeriod: 3000,
+      connectTimeout: 12000,
+      will: { topic: tYo, payload: "", qos: 0, retain: true }
+    });
+
+    cliente.on("connect", function(){
+      elFoco.className = "ok";
+      cliente.subscribe([tMsg, RAIZ + grupo + "/quien/+"], { qos: 1 });
+      cliente.publish(tYo, JSON.stringify({ n: yo }), { qos: 0, retain: true });
+      contarPresentes();
+    });
+
+    cliente.on("reconnect", function(){
+      elFoco.className = "";
+      elTEstado.textContent = "Reconectando…";
+    });
+
+    cliente.on("close", function(){ elFoco.className = ""; });
+
+    cliente.on("error", function(){
+      elFoco.className = "";
+      elTEstado.textContent = "Sin conexión con el servidor";
+    });
+
+    cliente.on("message", function(topic, carga){
+      var txt = carga.toString();
+
+      if(topic.indexOf("/quien/") > -1){
+        var id = topic.split("/quien/")[1];
+        if(txt === ""){
+          if(presentes[id]){
+            var salio = presentes[id];
+            delete presentes[id];
+            if(id !== idCliente) pintarAviso(salio + " salió del grupo");
+          }
+        }else{
+          try{
+            var q = JSON.parse(txt);
+            var nuevo = !presentes[id];
+            presentes[id] = q.n;
+            if(nuevo && id !== idCliente) pintarAviso(q.n + " entró al grupo");
+          }catch(e){}
+        }
+        contarPresentes();
+        return;
+      }
+
+      try{
+        var m = JSON.parse(txt);
+        pintarMensaje(m.de, m.t, m.ts, m.cid === idCliente);
+      }catch(e){}
+    });
+  }
+
+  function enviar(){
+    var cuerpo = inTexto.value.trim();
+    if(!cuerpo || !cliente || !cliente.connected) return;
+    cliente.publish(RAIZ + grupo + "/msg", JSON.stringify({
+      cid: idCliente, de: yo, t: cuerpo, ts: Date.now()
+    }), { qos: 1 });
+    inTexto.value = "";
+    inTexto.style.height = "auto";
+    btEnviar.disabled = true;
+  }
+
+  function entrar(){
+    yo = inNombre.value.trim();
+    grupo = limpiarCodigo(inGrupo.value);
+    if(!yo || !grupo) return;
+
+    grabar("chat_nombre", yo);
+    grabar("chat_grupo", grupo);
+
+    idCliente = "bth-" + Math.random().toString(36).slice(2,10);
+    elTGrupo.textContent = grupo;
+    elHilo.innerHTML = '<p class="vacio">Nadie ha escrito todavía. Los mensajes aparecen aquí en cuanto alguien envíe el primero.</p>';
+    presentes = {};
+
+    elIngreso.style.display = "none";
+    elChat.style.display = "flex";
+    conectar();
+  }
+
+  function salir(){
+    if(cliente){
+      try{
+        cliente.publish(RAIZ + grupo + "/quien/" + idCliente, "", { qos: 0, retain: true });
+        cliente.end(true);
+      }catch(e){}
+      cliente = null;
+    }
+    elChat.style.display = "none";
+    elIngreso.style.display = "flex";
+    elFoco.className = "";
+  }
+
+  function revisarIngreso(){
+    btEntrar.disabled = !(inNombre.value.trim() && inGrupo.value.trim());
+  }
+
+  inNombre.addEventListener("input", revisarIngreso);
+  inGrupo.addEventListener("input", revisarIngreso);
+  btEntrar.addEventListener("click", entrar);
+  btSalir.addEventListener("click", salir);
+  btEnviar.addEventListener("click", enviar);
+
+  inTexto.addEventListener("input", function(){
+    btEnviar.disabled = !inTexto.value.trim();
+    inTexto.style.height = "auto";
+    inTexto.style.height = Math.min(inTexto.scrollHeight, 110) + "px";
+  });
+
+  inTexto.addEventListener("keydown", function(ev){
+    if(ev.key === "Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); }
+  });
+
+  window.addEventListener("pagehide", function(){
+    if(cliente && cliente.connected){
+      try{ cliente.publish(RAIZ + grupo + "/quien/" + idCliente, "", { qos:0, retain:true }); }catch(e){}
+    }
+  });
+
+  inNombre.value = leer("chat_nombre") || "";
+  inGrupo.value = leer("chat_grupo") || "TECNICA";
+  revisarIngreso();
+})();
+</script>
+</body>
+</html>
